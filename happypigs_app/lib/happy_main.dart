@@ -6,6 +6,8 @@ import 'package:happypigs_app/db/Plate.dart';
 import 'package:happypigs_app/db/Tag.dart';
 import 'package:happypigs_app/db/User.dart';
 
+import 'db/db_manager.dart';
+
 class HappyMainPage extends StatefulWidget {
   @override
   _HappyMainPageState createState() => _HappyMainPageState();
@@ -66,5 +68,4 @@ class _HappyMainPageState extends State<HappyMainPage> {
     await db_helper.insertUser(User(name: 'piggy'));
     print("Succeed to insert----------");
   }
-
 }
