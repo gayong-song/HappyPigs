@@ -11,6 +11,7 @@ import 'db/db_manager.dart';
 class HappyMainPage extends StatefulWidget {
   @override
   _HappyMainPageState createState() => _HappyMainPageState();
+
 }
 
 class _HappyMainPageState extends State<HappyMainPage> {

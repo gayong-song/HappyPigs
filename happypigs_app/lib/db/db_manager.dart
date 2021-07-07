@@ -31,8 +31,11 @@ class DBHelper {
     String path = join(documentDirectory.path, "happy_database.db");
     if (_isDebug) await deleteDatabase(path);
     var taskDb = await openDatabase(path, version: 1);
-    if (_isDebug) await _createDb();
     return taskDb;
+  }
+
+  Future initTable() async{
+    await _createDb();
   }
 
   /// Count number of tables in DB
@@ -48,14 +51,15 @@ class DBHelper {
   }
 
   Future<void> _createDb() async {
-    await _createUserTable(_db);
-    await _createTagTable(_db);
-    await _createPlateGroupTable(_db);
-    await _createPlateTypeTable(_db);
-    await _createPlateTable(_db);
-    await _createPlateImgPathTable(_db);
-    await _createItemsTagsTable(_db);
-    await _createPlateTypesGroupTable(_db);
+    var dbClient = await db;
+    await _createUserTable(dbClient);
+    await _createTagTable(dbClient);
+    await _createPlateGroupTable(dbClient);
+    await _createPlateTypeTable(dbClient);
+    await _createPlateTable(dbClient);
+    await _createPlateImgPathTable(dbClient);
+    await _createItemsTagsTable(dbClient);
+    await _createPlateTypesGroupTable(dbClient);
     await countTable();
   }
 
