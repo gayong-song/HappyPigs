@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:happypigs_app/db/db_manager.dart';
 
 import 'happy_main.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  /// Initialize sq-lite
+  final db = DBHelper();
+  await db.countTable();
+
   runApp(MyApp());
 }
 

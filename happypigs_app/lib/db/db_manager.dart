@@ -1,4 +1,6 @@
 import 'package:path/path.dart';
+import 'dart:io' as io;
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 import 'Plate.dart';
@@ -7,109 +9,131 @@ import 'Tag.dart';
 import 'User.dart';
 
 class DBHelper {
-  static final DBHelper _instance = DBHelper._internal();
-  var _db;
+  static final DBHelper _instance = DBHelper.internal();
+  factory DBHelper() => _instance;
 
-  factory DBHelper(){
-    return _instance;
-  }
+  static Database _db;
+  bool _isDebug = true;
 
-  DBHelper._internal(){
-    _deleteDb();
-    printDatabase();
-  }
-
-  Future<Database> get database async {
-    if (_db != null) return _db;
-    _db = openDatabase(
-      join(await getDatabasesPath(), 'happy_database.db'),
-      onCreate: (db, version) => _createDb(db),
-      version: 1,
-    );
+  Future<Database> get db async {
+    if (_db != null) {
+      return _db;
+    }
+    _db = await initDb();
     return _db;
   }
 
-  Future<void> _createDb(Database db) async {
-    await createUserTable(db);
-    await createPlateTable(db);
-    await createPlateImgPathTable(db);
-    await createPlateTypeTable(db);
-    await createTagTable(db);
-    await createItemsTagsTable(db);
+  DBHelper.internal();
+
+  /// Initialize DB
+  initDb() async {
+    io.Directory documentDirectory = await getApplicationDocumentsDirectory();
+    String path = join(documentDirectory.path, "happy_database.db");
+    if (_isDebug) await deleteDatabase(path);
+    var taskDb = await openDatabase(path, version: 1);
+    if (_isDebug) await _createDb();
+    return taskDb;
   }
 
-  Future<void> createUserTable(Database db) async {
-    await db.execute('''create table User (
-          name text default piggy
-        )''');
+  /// Count number of tables in DB
+  Future countTable() async {
+    var dbClient = await db;
+    var res =
+    await dbClient.rawQuery("""SELECT count(*) as count FROM sqlite_master
+         WHERE type = 'table' 
+         AND name != 'android_metadata' 
+         AND name != 'sqlite_sequence';""");
+    print("count :  ${res[0]['count']}");
+    return res[0]['count'];
   }
 
-  Future<void> createPlateTable(Database db) async {
-    await db.execute('''create table IF NOT EXISTS Plate (
-           plateId integer primary key autoincrement not null,
-           whereToEat text not null,
-           whenToEat datetime not null,
-           description text not null,
-           rating integer not null,
-           plateTypeId integer default 0
-          )''');
+  Future<void> _createDb() async {
+    await _createUserTable(_db);
+    await _createTagTable(_db);
+    await _createPlateGroupTable(_db);
+    await _createPlateTypeTable(_db);
+    await _createPlateTable(_db);
+    await _createPlateImgPathTable(_db);
+    await _createItemsTagsTable(_db);
+    await _createPlateTypesGroupTable(_db);
+    await countTable();
   }
 
-  Future<void> createPlateImgPathTable(Database db) async {
+  Future<void> _createUserTable(Database db) async {
+    await db.execute('''create table IF NOT EXISTS User (
+         name text default piggy
+       )''');
+  }
+
+  Future<void> _createPlateImgPathTable(Database db) async {
     await db.execute('''create table IF NOT EXISTS Plate_Img_Path (
-           imgPathId integer primary key autoincrement not null,
-           plateId integer not null,
-           path text not null
-          )''');
+          imgPathId integer primary key autoincrement not null,
+          plateId integer not null,
+          path text not null,
+          FOREIGN KEY(plateId) REFERENCES Plate(plateId)
+         )''');
   }
 
-  Future<void> createPlateTypeTable(Database db) async {
+  Future<void> _createPlateGroupTable(Database db) async {
+    await db.execute('''create table if not exists PlateGroup (
+    plateGroupId integer primary key autoincrement not null,
+    title text
+    )''');
+  }
+
+  Future<void> _createPlateTypeTable(Database db) async {
     await db.execute('''create table if not exists PlateType (
-     plateTypeId integer primary key autoincrement not null,
-     imgPath text not null,
-     plateGroupId integer not null
-    )''');
+    plateTypeId integer primary key autoincrement not null,
+    imgPath text not null,
+    plateGroupId integer not null,
+    FOREIGN KEY(plateGroupId) REFERENCES PlateGroup(plateGroupId)
+   )''');
   }
 
-  Future<void> createTagTable(Database db) async {
+  Future<void> _createPlateTable(Database db) async {
+    await db.execute('''create table IF NOT EXISTS Plate (
+          plateId integer primary key autoincrement not null,
+          whereToEat text not null,
+          whenToEat datetime not null,
+          description text not null,
+          rating integer not null,
+          plateTypeId integer not null,
+          FOREIGN KEY(plateTypeId) REFERENCES PlateType(plateTypeId)
+         )''');
+  }
+
+  Future<void> _createPlateTypesGroupTable(Database db) async {
+    await db.execute('''create table if not exists PlateType_Group (
+    plateGroupId integer not null,
+    createPlateTypeTable integer not null,
+    FOREIGN KEY(plateGroupId) REFERENCES PlateGroup(plateGroupId),
+    FOREIGN KEY(createPlateTypeTable) REFERENCES PlateType(createPlateTypeTable)
+   )''');
+  }
+
+  Future<void> _createTagTable(Database db) async {
     await db.execute('''create table if not exists Tags (
-     tagId integer primary key autoincrement not null,
-     name text not null
-    )''');
+    tagId integer primary key autoincrement not null,
+    name text not null
+   )''');
   }
 
-  Future<void> createItemsTagsTable(Database db) async {
+  Future<void> _createItemsTagsTable(Database db) async {
     await db.execute('''create table if not exists Items_Tags (
-     tagId integer not null,
-     plateId integer not null
-    )''');
-  }
-
-  void _deleteDb() async {
-    await deleteDatabase(join(await getDatabasesPath(), 'happy_database.db'));
-  }
-
-  Future<void> printDatabase() async {
-    final Database db = await database;
-    print("is Open ? ${db.isOpen}");
-    print("is Open ? ${db.path}");
-    print("is Open ? ${db.rawQuery("SELECT * FROM Plate")}");
-    print("is Open ? ${db.rawQuery("SELECT * FROM Plate_Img_Path")}");
-    print("is Open ? ${db.rawQuery("SELECT * FROM User")}");
-    print("is Open ? ${db.rawQuery("SELECT * FROM PlateType")}");
-    print("is Open ? ${db.rawQuery("SELECT * FROM Tags")}");
-    print("is Open ? ${db.rawQuery("SELECT * FROM Items_Tags")}");
+    tagId integer not null,
+    plateId integer not null,
+    FOREIGN KEY(tagId) REFERENCES Tags(tagId),
+    FOREIGN KEY(plateId) REFERENCES Plate(plateId)
+   )''');
   }
 
   // Define a function that inserts User into the database
   Future<void> insertUser(User user) async {
-    final Database db = await database;
-
     // Insert the User into the correct table. You might also specify the
     // `conflictAlgorithm` to use in case the same dog is inserted twice.
     //
     // In this case, replace any previous data.
-    await db.insert(
+    await _db.insert(
       // Todo : need to rename user table below
       'User',
       user.toMap(),
@@ -119,9 +143,7 @@ class DBHelper {
 
 // Define a function that inserts Plate into the database
   Future<void> insertPlate(Plate plate) async {
-    final Database db = await database;
-
-    await db.insert(
+    await _db.insert(
       // Todo : need to rename plate table below
       'Plate',
       plate.toMap(),
@@ -131,9 +153,7 @@ class DBHelper {
 
 // Define a function that inserts PlateType into the database
   Future<void> insertPlateType(PlateType plate_type) async {
-    final Database db = await database;
-
-    await db.insert(
+    await _db.insert(
       // Todo : need to rename platetype table below
       'PlateType',
       plate_type.toMap(),
@@ -143,9 +163,7 @@ class DBHelper {
 
 // Define a function that inserts PlateType into the database
   Future<void> insertTag(Tag tag) async {
-    final Database db = await database;
-
-    await db.insert(
+    await _db.insert(
       // Todo : need to rename tag table below
       'Tags',
       tag.toMap(),
@@ -154,8 +172,7 @@ class DBHelper {
   }
 
   Future<List<Map<String, dynamic>>> getData(String table_name) async {
-    final Database db = await database;
-    return db.query(table_name);
+    return await _db.query(table_name);
   }
 
   Future<List<Plate>> readPlates() async {
@@ -209,5 +226,4 @@ class DBHelper {
       );
     });
   }
-
 }
