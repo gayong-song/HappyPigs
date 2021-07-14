@@ -1,6 +1,6 @@
 class Tag {
-  final int tagId;
-  final String name;
+  int tagId;
+  String name="";
 
   Tag({this.tagId, this.name});
 

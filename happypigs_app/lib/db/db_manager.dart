@@ -1,5 +1,6 @@
-import 'package:path/path.dart';
 import 'dart:io' as io;
+
+import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -10,12 +11,23 @@ import 'User.dart';
 
 class DBHelper {
   static final DBHelper _instance = DBHelper.internal();
+
   factory DBHelper() => _instance;
 
   static Database _db;
   bool _isDebug = true;
 
-  Future<Database> get db async {
+  String userTable = "User";
+  String plateTable = "Plate";
+  String plateGroupTable = "PlateGroup";
+  String plateTypeTable = "PlateType";
+  String tagsTable = "Tags";
+  // r prefix means "relation"
+  String rPlateImgTable = "Plate_Img_Path";
+  String rPlateTypeGroupTable = "PlateType_Group";
+  String rItemTagTable = "Items_Tags";
+
+  Future<Database> get database async {
     if (_db != null) {
       return _db;
     }
@@ -34,15 +46,15 @@ class DBHelper {
     return taskDb;
   }
 
-  Future initTable() async{
+  Future initTable() async {
     await _createDb();
   }
 
   /// Count number of tables in DB
   Future countTable() async {
-    var dbClient = await db;
+    var dbClient = await database;
     var res =
-    await dbClient.rawQuery("""SELECT count(*) as count FROM sqlite_master
+        await dbClient.rawQuery("""SELECT count(*) as count FROM sqlite_master
          WHERE type = 'table' 
          AND name != 'android_metadata' 
          AND name != 'sqlite_sequence';""");
@@ -51,7 +63,7 @@ class DBHelper {
   }
 
   Future<void> _createDb() async {
-    var dbClient = await db;
+    var dbClient = await database;
     await _createUserTable(dbClient);
     await _createTagTable(dbClient);
     await _createPlateGroupTable(dbClient);
@@ -64,70 +76,70 @@ class DBHelper {
   }
 
   Future<void> _createUserTable(Database db) async {
-    await db.execute('''create table IF NOT EXISTS User (
+    await db.execute('''create table IF NOT EXISTS $userTable (
          name text default piggy
        )''');
   }
 
   Future<void> _createPlateImgPathTable(Database db) async {
-    await db.execute('''create table IF NOT EXISTS Plate_Img_Path (
+    await db.execute('''create table IF NOT EXISTS $rPlateImgTable (
           imgPathId integer primary key autoincrement not null,
           plateId integer not null,
           path text not null,
-          FOREIGN KEY(plateId) REFERENCES Plate(plateId)
+          FOREIGN KEY(plateId) REFERENCES $plateTable(plateId)
          )''');
   }
 
   Future<void> _createPlateGroupTable(Database db) async {
-    await db.execute('''create table if not exists PlateGroup (
+    await db.execute('''create table if not exists $plateGroupTable (
     plateGroupId integer primary key autoincrement not null,
     title text
     )''');
   }
 
   Future<void> _createPlateTypeTable(Database db) async {
-    await db.execute('''create table if not exists PlateType (
+    await db.execute('''create table if not exists $plateTypeTable (
     plateTypeId integer primary key autoincrement not null,
     imgPath text not null,
     plateGroupId integer not null,
-    FOREIGN KEY(plateGroupId) REFERENCES PlateGroup(plateGroupId)
+    FOREIGN KEY(plateGroupId) REFERENCES $plateGroupTable(plateGroupId)
    )''');
   }
 
   Future<void> _createPlateTable(Database db) async {
-    await db.execute('''create table IF NOT EXISTS Plate (
+    await db.execute('''create table IF NOT EXISTS $plateTable (
           plateId integer primary key autoincrement not null,
           whereToEat text not null,
           whenToEat datetime not null,
           description text not null,
           rating integer not null,
           plateTypeId integer not null,
-          FOREIGN KEY(plateTypeId) REFERENCES PlateType(plateTypeId)
+          FOREIGN KEY(plateTypeId) REFERENCES $plateTypeTable(plateTypeId)
          )''');
   }
 
   Future<void> _createPlateTypesGroupTable(Database db) async {
-    await db.execute('''create table if not exists PlateType_Group (
+    await db.execute('''create table if not exists $rPlateTypeGroupTable (
     plateGroupId integer not null,
     createPlateTypeTable integer not null,
-    FOREIGN KEY(plateGroupId) REFERENCES PlateGroup(plateGroupId),
-    FOREIGN KEY(createPlateTypeTable) REFERENCES PlateType(createPlateTypeTable)
+    FOREIGN KEY(plateGroupId) REFERENCES $plateGroupTable(plateGroupId),
+    FOREIGN KEY(createPlateTypeTable) REFERENCES $plateTypeTable(createPlateTypeTable)
    )''');
   }
 
   Future<void> _createTagTable(Database db) async {
-    await db.execute('''create table if not exists Tags (
+    await db.execute('''create table if not exists $tagsTable (
     tagId integer primary key autoincrement not null,
     name text not null
    )''');
   }
 
   Future<void> _createItemsTagsTable(Database db) async {
-    await db.execute('''create table if not exists Items_Tags (
+    await db.execute('''create table if not exists $rItemTagTable (
     tagId integer not null,
     plateId integer not null,
-    FOREIGN KEY(tagId) REFERENCES Tags(tagId),
-    FOREIGN KEY(plateId) REFERENCES Plate(plateId)
+    FOREIGN KEY(tagId) REFERENCES $tagsTable(tagId),
+    FOREIGN KEY(plateId) REFERENCES $plateTable(plateId)
    )''');
   }
 
@@ -137,67 +149,111 @@ class DBHelper {
     // `conflictAlgorithm` to use in case the same dog is inserted twice.
     //
     // In this case, replace any previous data.
-    await _db.insert(
-      // Todo : need to rename user table below
-      'User',
+    var dbClient = await database;
+    await dbClient.insert(
+      userTable,
       user.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-// Define a function that inserts Plate into the database
+  // Define a function that inserts Plate into the database
   Future<void> insertPlate(Plate plate) async {
-    await _db.insert(
-      // Todo : need to rename plate table below
-      'Plate',
+    var dbClient = await database;
+    await dbClient.insert(
+      plateTable,
       plate.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    var resultSet = await dbClient.rawQuery("SELECT * FROM $plateTable WHERE plateId=(SELECT max(plateId) FROM $plateTable)" );
+    var dbItem = resultSet.first;
+    plate.plateId = dbItem['plateId'] as int;
+    print("Put id to plate ${plate.plateId}");
+
+    for (var imgPath in plate.imgPaths) {
+      await dbClient.insert(
+        rPlateImgTable,
+        {'path': imgPath, 'plateId': plate.plateId},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    for (var tag_id in plate.tag_ids) {
+      await dbClient.insert(
+        rItemTagTable,
+        {'tagId': tag_id, 'plateId': plate.plateId},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
   }
 
-// Define a function that inserts PlateType into the database
+  // Define a function that inserts PlateType into the database
   Future<void> insertPlateType(PlateType plate_type) async {
-    await _db.insert(
-      // Todo : need to rename platetype table below
-      'PlateType',
+    var dbClient = await database;
+    await dbClient.insert(
+      plateTypeTable,
       plate_type.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    var resultSet = await dbClient.rawQuery("SELECT * FROM $plateTypeTable WHERE plateTypeId=(SELECT max(plateTypeId) FROM $plateTypeTable)" );
+    var dbItem = resultSet.first;
+    plate_type.plateTypeId = dbItem['plateTypeId'] as int;
+    print("Put id to plate_type ${plate_type.plateTypeId}");
   }
 
-// Define a function that inserts PlateType into the database
   Future<void> insertTag(Tag tag) async {
-    await _db.insert(
-      // Todo : need to rename tag table below
-      'Tags',
+    var dbClient = await database;
+    await dbClient.insert(
+      tagsTable,
       tag.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    var resultSet = await dbClient.rawQuery("SELECT * FROM $tagsTable WHERE tagId=(SELECT max(tagId) FROM $tagsTable)" );
+    var dbItem = resultSet.first;
+    tag.tagId = dbItem['tagId'] as int;
+    print("Put id to tag ${tag.tagId}");
   }
 
   Future<List<Map<String, dynamic>>> getData(String table_name) async {
-    return await _db.query(table_name);
+    var dbClient = await database;
+    return await dbClient.query(table_name);
+  }
+
+  Future<List<Map<String, dynamic>>> getPlateData(
+      int plateId, String table_name) async {
+    var dbClient = await database;
+    return await dbClient.rawQuery("SELECT * FROM $table_name WHERE plateId=$plateId");
   }
 
   Future<List<Plate>> readPlates() async {
-    // Todo: need to rename table below
-    final List<Map<String, dynamic>> maps = await getData('Plate');
+    final List<Map<String, dynamic>> maps = await getData(plateTable);
+    List<Plate> plates=[];
 
-    return List.generate(maps.length, (i) {
-      return Plate(
-        plateId: maps[i]['plateId'],
-        whereToEat: maps[i]['whereToEat'],
-        whenToEat: DateTime.parse(maps[i]['whenToEat']),
-        description: maps[i]['description'],
-        rating: maps[i]['rating'],
-        plateTypeId: maps[i]['plateTypeId'],
-      );
-    });
+    for ( var pl in maps ){
+      var imgPaths = await getPlateData(pl['plateId'], rPlateImgTable);
+      var plateTags = await getPlateData(pl['plateId'], rItemTagTable);
+
+      plates.add(Plate(
+        plateId: pl['plateId'],
+        whereToEat: pl['whereToEat'],
+        whenToEat: DateTime.parse(pl['whenToEat']),
+        description: pl['description'],
+        plateTypeId: pl['plateTypeId'],
+        rating: pl['rating'],
+        imgPaths: List.generate(imgPaths.length, (j) {
+          return imgPaths[j]['path'];
+        }),
+        tag_ids: List.generate(plateTags.length, (k) {
+          return plateTags[k]['tagId'];
+        }),
+      ));
+    };
+    return plates;
   }
 
   Future<List<PlateType>> readPlateTypes() async {
     // Todo: need to rename table below
-    final List<Map<String, dynamic>> maps = await getData('PlateType');
+    final List<Map<String, dynamic>> maps = await getData(plateTypeTable);
 
     return List.generate(maps.length, (i) {
       return PlateType(
@@ -210,7 +266,7 @@ class DBHelper {
 
   Future<List<Tag>> readTags() async {
     // Todo: need to rename table below
-    final List<Map<String, dynamic>> maps = await getData('Tags');
+    final List<Map<String, dynamic>> maps = await getData(tagsTable);
 
     return List.generate(maps.length, (i) {
       return Tag(
@@ -222,7 +278,7 @@ class DBHelper {
 
   Future<List<User>> readUser() async {
     // Todo: need to rename table below
-    final List<Map<String, dynamic>> maps = await getData('User');
+    final List<Map<String, dynamic>> maps = await getData(userTable);
 
     return List.generate(maps.length, (i) {
       return User(

@@ -44,15 +44,37 @@ class _HappyMainPageState extends State<HappyMainPage> {
 
   Future<void> create_samples_for_test() async {
     var plate_ex1 = Plate(
-        // imgPaths: "",
+        imgPaths: ["/home/1.jpg", "/home/2.jpg"],
         whereToEat: "Flora's home",
         whenToEat: DateTime.now(),
         description: "So delicious",
-        // tags: [],
+        tag_ids: [0, 1],
         rating: 3,
         plateTypeId: 0);
-    print(plate_ex1);
+    print("Try to insert $plate_ex1");
     await db_helper.insertPlate(plate_ex1);
+
+    var plate_ex2 = Plate(
+        imgPaths: ["/home/3.jpg", "/home/4.jpg"],
+        whereToEat: "Future's home",
+        whenToEat: DateTime.now(),
+        description: "So nice",
+        tag_ids: [2],
+        rating: 2,
+        plateTypeId: 0);
+    print("Try to insert $plate_ex2");
+    await db_helper.insertPlate(plate_ex2);
+
+    var plate_ex3 = Plate(
+        imgPaths: ["/home/1.jpg"],
+        whereToEat: "Yuni's home",
+        whenToEat: DateTime.now(),
+        description: "Awesome",
+        tag_ids: [],
+        rating: 1,
+        plateTypeId: 0);
+    print("Try to insert $plate_ex3");
+    await db_helper.insertPlate(plate_ex3);
 
     var platetype_ex1 = PlateType(
         imgPath: "",
