@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:happypigs_app/db/db_manager.dart';
-import 'package:happypigs_app/db/db_manager.dart';
-import 'package:happypigs_app/db/PlateType.dart';
 import 'package:happypigs_app/db/Plate.dart';
+import 'package:happypigs_app/db/PlateType.dart';
 import 'package:happypigs_app/db/Tag.dart';
 import 'package:happypigs_app/db/User.dart';
+import 'package:happypigs_app/db/db_manager.dart';
 
 import 'db/db_manager.dart';
 
 class HappyMainPage extends StatefulWidget {
   @override
   _HappyMainPageState createState() => _HappyMainPageState();
-
 }
 
 class _HappyMainPageState extends State<HappyMainPage> {
   DBHelper db_helper;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
     db_helper = DBHelper();
   }
@@ -76,15 +74,11 @@ class _HappyMainPageState extends State<HappyMainPage> {
     print("Try to insert $plate_ex3");
     await db_helper.insertPlate(plate_ex3);
 
-    var platetype_ex1 = PlateType(
-        imgPath: "",
-        plateGroupId: 0);
+    var platetype_ex1 = PlateType(imgPath: "", plateGroupId: 0);
     print(platetype_ex1);
     await db_helper.insertPlateType(platetype_ex1);
 
-    var tag_ex1 = Tag(
-      name: "Italian"
-    );
+    var tag_ex1 = Tag(name: "Italian");
     print(tag_ex1);
     await db_helper.insertTag(tag_ex1);
 

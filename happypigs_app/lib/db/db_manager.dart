@@ -22,6 +22,7 @@ class DBHelper {
   String plateGroupTable = "PlateGroup";
   String plateTypeTable = "PlateType";
   String tagsTable = "Tags";
+
   // r prefix means "relation"
   String rPlateImgTable = "Plate_Img_Path";
   String rPlateTypeGroupTable = "PlateType_Group";
@@ -165,7 +166,8 @@ class DBHelper {
       plate.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    var resultSet = await dbClient.rawQuery("SELECT * FROM $plateTable WHERE plateId=(SELECT max(plateId) FROM $plateTable)" );
+    var resultSet = await dbClient.rawQuery(
+        "SELECT * FROM $plateTable WHERE plateId=(SELECT max(plateId) FROM $plateTable)");
     var dbItem = resultSet.first;
     plate.plateId = dbItem['plateId'] as int;
     print("Put id to plate ${plate.plateId}");
@@ -195,7 +197,8 @@ class DBHelper {
       plate_type.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    var resultSet = await dbClient.rawQuery("SELECT * FROM $plateTypeTable WHERE plateTypeId=(SELECT max(plateTypeId) FROM $plateTypeTable)" );
+    var resultSet = await dbClient.rawQuery(
+        "SELECT * FROM $plateTypeTable WHERE plateTypeId=(SELECT max(plateTypeId) FROM $plateTypeTable)");
     var dbItem = resultSet.first;
     plate_type.plateTypeId = dbItem['plateTypeId'] as int;
     print("Put id to plate_type ${plate_type.plateTypeId}");
@@ -208,7 +211,8 @@ class DBHelper {
       tag.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    var resultSet = await dbClient.rawQuery("SELECT * FROM $tagsTable WHERE tagId=(SELECT max(tagId) FROM $tagsTable)" );
+    var resultSet = await dbClient.rawQuery(
+        "SELECT * FROM $tagsTable WHERE tagId=(SELECT max(tagId) FROM $tagsTable)");
     var dbItem = resultSet.first;
     tag.tagId = dbItem['tagId'] as int;
     print("Put id to tag ${tag.tagId}");
@@ -222,14 +226,15 @@ class DBHelper {
   Future<List<Map<String, dynamic>>> getPlateData(
       int plateId, String table_name) async {
     var dbClient = await database;
-    return await dbClient.rawQuery("SELECT * FROM $table_name WHERE plateId=$plateId");
+    return await dbClient
+        .rawQuery("SELECT * FROM $table_name WHERE plateId=$plateId");
   }
 
   Future<List<Plate>> readPlates() async {
     final List<Map<String, dynamic>> maps = await getData(plateTable);
-    List<Plate> plates=[];
+    List<Plate> plates = [];
 
-    for ( var pl in maps ){
+    for (var pl in maps) {
       var imgPaths = await getPlateData(pl['plateId'], rPlateImgTable);
       var plateTags = await getPlateData(pl['plateId'], rItemTagTable);
 
@@ -247,7 +252,8 @@ class DBHelper {
           return plateTags[k]['tagId'];
         }),
       ));
-    };
+    }
+    ;
     return plates;
   }
 

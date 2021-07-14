@@ -8,14 +8,15 @@ class Plate {
   final int rating;
   final int plateTypeId;
 
-  Plate({this.plateId,
-    this.imgPaths,
-    this.whereToEat,
-    this.whenToEat,
-    this.description,
-    this.tag_ids,
-    this.rating,
-    this.plateTypeId});
+  Plate(
+      {this.plateId,
+      this.imgPaths,
+      this.whereToEat,
+      this.whenToEat,
+      this.description,
+      this.tag_ids,
+      this.rating,
+      this.plateTypeId});
 
   Map<String, dynamic> toMap() {
     return {
