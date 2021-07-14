@@ -5,10 +5,9 @@ import 'happy_main.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   /// Initialize sq-lite
   final db = DBHelper();
-  await db.countTable();
+  await db.initTable();
 
   runApp(MyApp());
 }
