@@ -1,5 +1,5 @@
 class PlateType {
-  final int plateTypeId;
+  int plateTypeId;
   final String imgPath;
   final int plateGroupId;
 
