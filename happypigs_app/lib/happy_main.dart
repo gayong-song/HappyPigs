@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:happypigs_app/addPlate.dart';
 import 'package:happypigs_app/db/Plate.dart';
 import 'package:happypigs_app/db/PlateType.dart';
 import 'package:happypigs_app/db/Tag.dart';
@@ -37,7 +38,19 @@ class _HappyMainPageState extends State<HappyMainPage> {
   @override
   Widget build(BuildContext context) {
     test();
-    return Scaffold();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Happy Pig Main Page'),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.of(context).pushNamed('/addPlate');
+          // Navigator.of(context)
+          //     .push(MaterialPageRoute(builder: (context) => AddPlatePage()));
+        },
+        child: Icon(Icons.add_circle),
+      ),
+    );
   }
 
   Future<void> create_samples_for_test() async {
