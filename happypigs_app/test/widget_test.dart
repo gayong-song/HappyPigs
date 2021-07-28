@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:happypigs_app/main.dart';
+import 'package:happypigs_app/mainPage.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
