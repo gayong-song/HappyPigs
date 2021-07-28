@@ -6,7 +6,7 @@ class WelcomePage extends StatelessWidget {
   final pageList = [
     PageModel(
         color: const Color(0xFF678FB4),
-        heroImagePath: 'assets/png/giphy.gif',
+        heroImagePath: 'assets/gif/giphy.gif',
         title: Text('Hello',
             style: TextStyle(
               fontFamily: 'Oi',
@@ -27,7 +27,7 @@ class WelcomePage extends StatelessWidget {
     ),
     PageModel(
         color: const Color(0xFF65B0B4),
-        heroImagePath: 'assets/png/colorfulpig.gif',
+        heroImagePath: 'assets/gif/colorfulpig.gif',
         title: Text('Diary',
             style: TextStyle(
               fontFamily: 'Oi',
@@ -47,7 +47,7 @@ class WelcomePage extends StatelessWidget {
     ),
     PageModel(
       color: const Color(0xFF9B90BC),
-      heroImagePath: 'assets/png/purple_pig.gif',
+      heroImagePath: 'assets/gif/purple_pig.gif',
       title: Text('Enjoy',
           style: TextStyle(
             fontFamily: 'Oi',
