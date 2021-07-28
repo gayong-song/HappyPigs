@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:happypigs_app/addPlatePage.dart';
 import 'package:happypigs_app/addScorePage.dart';
 import 'package:happypigs_app/db/db_manager.dart';
 import 'package:happypigs_app/welcomePage.dart';
 
-import 'addPlatePage.dart';
 import 'happy_main.dart';
 
 Future<void> main() async {
