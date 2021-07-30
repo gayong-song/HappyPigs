@@ -3,7 +3,7 @@ import 'package:happypigs_app/addScorePage.dart';
 import 'package:happypigs_app/db/db_manager.dart';
 import 'package:happypigs_app/welcome.dart';
 
-import 'addPlate.dart';
+import 'addPlatePage.dart';
 import 'happy_main.dart';
 
 Future<void> main() async {
