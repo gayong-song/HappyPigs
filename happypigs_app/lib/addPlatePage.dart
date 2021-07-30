@@ -14,13 +14,25 @@ class _AddPlatePageState extends State<AddPlatePage> {
   List<FileModel> files = [];
   FileModel selectedModel = FileModel([], "");
   File image;
+  PhotoViewScaleStateController scaleStateController;
 
   String _error = 'No error detected';
 
   @override
   void initState() {
     super.initState();
+    scaleStateController = PhotoViewScaleStateController();
     getImagesPath();
+  }
+
+  @override
+  void dispose() {
+    scaleStateController.dispose();
+    super.dispose();
+  }
+
+  void goResizeBack() {
+    scaleStateController.scaleState = PhotoViewScaleState.originalSize;
   }
 
   void getImagesPath() async {
@@ -52,28 +64,6 @@ class _AddPlatePageState extends State<AddPlatePage> {
       });
   }
 
-  // Widget buildSliderView(contextSize) {
-  //   return CarouselSlider(
-  //       items: images.map(
-  //               (item) => Container(
-  //                 width: 300,
-  //                 height: 300,
-  //                 child: AssetThumb(
-  //                   asset: item,
-  //                   width: 300,
-  //                   height: 300,
-  //                 ),
-  // decoration: new BoxDecoration(
-  //   shape: BoxShape.circle,
-  //   border: Border.all(color: Colors.pinkAccent),
-  //   image: DecorationImage(image: AssetImage(item), fit:BoxFit.fill,),
-  // ),
-  //               )
-  //       ).toList(),
-  //       options: CarouselOptions(autoPlay: false),
-  //   );
-  // }
-
   // _getFromCamera(contextSize) async {
   //   PickedFile pickedFile = await ImagePicker().getImage(source: ImageSource.camera, maxWidth: contextSize.width, maxHeight: contextSize.height,);
   //   if( pickedFile != null ){
@@ -90,7 +80,8 @@ class _AddPlatePageState extends State<AddPlatePage> {
       appBar: AppBar(
         title: new Text('What did you eat?',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.pink.shade50, fontFamily: 'Oi')),
+            style: TextStyle(
+                color: Colors.pink.shade50, fontFamily: 'Oi', fontSize: 16.0)),
         leading: IconButton(
           icon: const Icon(Icons.close),
           color: Colors.pink.shade50,
@@ -115,51 +106,59 @@ class _AddPlatePageState extends State<AddPlatePage> {
           children: <Widget>[
             Container(
               height: contextSize.height * 0.4,
-              child: image != null
-                  ? Container(
-                      height: contextSize.height * 0.4,
-                      width: contextSize.width,
-                      child: Stack(
-                        children: <Widget>[
-                          PhotoView(
-                            imageProvider: FileImage(image),
-                            enableRotation: true,
-                            customSize: Size(
-                                contextSize.width, contextSize.height * 0.3),
-                            backgroundDecoration: BoxDecoration(
+              child: Stack(
+                children: <Widget>[
+                  Align(
+                    alignment: Alignment.center,
+                    child: image != null
+                        ? Container(
+                            height: contextSize.height * 0.4,
+                            width: contextSize.height * 0.4,
+                            alignment: Alignment.center,
+                            child: Stack(
+                              children: <Widget>[
+                                ClipOval(
+                                  child: PhotoView(
+                                    imageProvider: FileImage(image),
+                                    enableRotation: true,
+                                    minScale:
+                                        PhotoViewComputedScale.contained * 0.8,
+                                    maxScale:
+                                        PhotoViewComputedScale.covered * 1.2,
+                                    initialScale: contextSize.height * 0.4,
+                                    scaleStateController: scaleStateController,
+                                    backgroundDecoration: BoxDecoration(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            decoration: new BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.pink.shade50,
-                                width: 10,
-                              ),
-                              image: DecorationImage(
-                                image: FileImage(image),
-                                fit: BoxFit.fill,
+                                  color: Colors.pink.shade50, width: 10),
+                            ),
+                          )
+                        : Container(
+                            child: Center(
+                              child: new SizedBox(
+                                height: 50,
+                                width: 50,
+                                child: new CircularProgressIndicator(),
                               ),
                             ),
                           ),
-                          CustomPaint(
-                            painter: CirclePainter(contextSize),
-                          ),
-                        ],
-                      ),
-                      // decoration: new BoxDecoration(
-                      //   shape: BoxShape.circle,
-                      //   border:
-                      //   Border.all(color: Colors.pink.shade50, width: 10),
-                      //   image: DecorationImage(
-                      //       image: FileImage(image), fit: BoxFit.fill),
-                      // ),
-                    )
-                  : Container(
-                      child: Center(
-                        child: new SizedBox(
-                          height: 50,
-                          width: 50,
-                          child: new CircularProgressIndicator(),
-                        ),
-                      ),
-                    ),
+                  ),
+                  Container(
+                    alignment: Alignment.bottomRight,
+                    child: FlatButton(
+                        onPressed: goResizeBack,
+                        child: Icon(
+                          Icons.settings_backup_restore,
+                          color: Colors.pink.shade50,
+                        )),
+                  ),
+                ],
+              ),
             ),
             Divider(color: Colors.white),
             Container(
@@ -193,12 +192,16 @@ class _AddPlatePageState extends State<AddPlatePage> {
                         itemBuilder: (_, i) {
                           var file = selectedModel.files[i];
                           return GestureDetector(
-                            child: Image.file(
-                              file,
-                              fit: BoxFit.cover,
+                            child: Opacity(
+                              opacity: image==file?0.5:1.0,
+                              child: Image.file(
+                                file,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                             onTap: () {
                               setState(() {
+                                goResizeBack();
                                 image = file;
                               });
                             },
@@ -227,21 +230,4 @@ class _AddPlatePageState extends State<AddPlatePage> {
     print("ERROR : There is no files");
     return [];
   }
-}
-
-class CirclePainter extends CustomPainter {
-  Size size;
-
-  CirclePainter(this.size);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    var paint1 = Paint()
-      ..color = Colors.pink.shade50
-      ..style = PaintingStyle.stroke;
-    canvas.drawCircle(Offset(150, 150), size.height / 2, paint1);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
