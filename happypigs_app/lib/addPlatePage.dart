@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:happypigs_app/file.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:happypigs_app/util.dart';
+import 'package:happypigs_app/db/Plate.dart';
 
 class AddPlatePage extends StatefulWidget {
   @override
@@ -15,6 +19,11 @@ class _AddPlatePageState extends State<AddPlatePage> {
   FileModel selectedModel = FileModel([], "");
   File image;
   PhotoViewScaleStateController scaleStateController;
+  var photoController;
+  Offset photoPosition;
+  double photoScale;
+  double photoRotation;
+  Offset photoRotationFocusPoint;
 
   String _error = 'No error detected';
 
@@ -22,6 +31,7 @@ class _AddPlatePageState extends State<AddPlatePage> {
   void initState() {
     super.initState();
     scaleStateController = PhotoViewScaleStateController();
+    photoController = PhotoViewController()..outputStateStream.listen(listener);
     getImagesPath();
   }
 
@@ -31,8 +41,19 @@ class _AddPlatePageState extends State<AddPlatePage> {
     super.dispose();
   }
 
+  void listener(PhotoViewControllerValue value) {
+    setState(() {
+      photoPosition = value.position;
+      photoRotation = value.rotation;
+      photoRotationFocusPoint = value.rotationFocusPoint;
+      photoScale = value.scale;
+      print(
+          'DEBUG : photo is changed : position: $photoPosition / rotation: $photoRotation / rotationfocuspoint: $photoRotationFocusPoint / scale: $photoScale ');
+    });
+  }
+
   void goResizeBack() {
-    scaleStateController.scaleState = PhotoViewScaleState.originalSize;
+    scaleStateController.scaleState = PhotoViewScaleState.covering;
   }
 
   void getImagesPath() async {
@@ -78,10 +99,17 @@ class _AddPlatePageState extends State<AddPlatePage> {
     var contextSize = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        title: new Text('What did you eat?',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                color: Colors.pink.shade50, fontFamily: 'Oi', fontSize: 16.0)),
+        title: Align(
+          alignment: Alignment.center,
+          child: Container(
+            child: Text('What did you eat?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Colors.pink.shade50,
+                    fontFamily: 'Oi',
+                    fontSize: 16.0)),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close),
           color: Colors.pink.shade50,
@@ -93,8 +121,17 @@ class _AddPlatePageState extends State<AddPlatePage> {
           IconButton(
             icon: const Icon(Icons.navigate_next),
             color: Colors.pink.shade50,
-            onPressed: () {
-              Navigator.of(context).pushNamed('/addScore');
+            onPressed: () async {
+              Plate newPlate = Plate(
+                  imgPaths: [image.path],
+                  foodImage: Utility.base64String(image.readAsBytesSync()),
+                  whereToEat: "Yuni's home",
+                  whenToEat: DateTime.now(),
+                  description: "",
+                  tag_ids: [],
+                  rating: -1,
+                  plateTypeId: 0);
+              Navigator.of(context).pushNamed('/addScore', arguments: newPlate);
             },
           ),
         ],
@@ -124,10 +161,14 @@ class _AddPlatePageState extends State<AddPlatePage> {
                                     minScale:
                                         PhotoViewComputedScale.contained * 0.8,
                                     maxScale:
-                                        PhotoViewComputedScale.covered * 1.2,
-                                    initialScale: contextSize.height * 0.4,
+                                        PhotoViewComputedScale.covered * 2,
+//                                    initialScale:
+//                                        PhotoViewComputedScale.covered,
+                                    basePosition: Alignment.center,
+                                    controller: photoController,
                                     scaleStateController: scaleStateController,
-                                    backgroundDecoration: BoxDecoration(color: Colors.white),
+                                    backgroundDecoration:
+                                        BoxDecoration(color: Colors.white),
                                   ),
                                 ),
                               ],
@@ -193,7 +234,7 @@ class _AddPlatePageState extends State<AddPlatePage> {
                           var file = selectedModel.files[i];
                           return GestureDetector(
                             child: Opacity(
-                              opacity: image==file?0.5:1.0,
+                              opacity: image == file ? 0.5 : 1.0,
                               child: Image.file(
                                 file,
                                 fit: BoxFit.cover,
@@ -230,4 +271,5 @@ class _AddPlatePageState extends State<AddPlatePage> {
     print("ERROR : There is no files");
     return [];
   }
+
 }

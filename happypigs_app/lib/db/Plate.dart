@@ -1,16 +1,18 @@
 class Plate {
   int plateId;
   List<String> imgPaths = [];
+  String foodImage;
   final String whereToEat;
   final DateTime whenToEat;
   final String description;
   List<int> tag_ids = [];
-  final int rating;
+  int rating;
   final int plateTypeId;
 
   Plate(
       {this.plateId,
       this.imgPaths,
+      this.foodImage,
       this.whereToEat,
       this.whenToEat,
       this.description,
@@ -39,4 +41,5 @@ class Plate {
         'rating: $rating, '
         'plateTypeId: $plateTypeId';
   }
+
 }
