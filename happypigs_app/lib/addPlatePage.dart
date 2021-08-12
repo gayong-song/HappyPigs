@@ -1,11 +1,9 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:happypigs_app/file.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:happypigs_app/file.dart';
 import 'package:happypigs_app/util.dart';
 import 'package:happypigs_app/db/Plate.dart';
 
@@ -20,10 +18,7 @@ class _AddPlatePageState extends State<AddPlatePage> {
   File image;
   PhotoViewScaleStateController scaleStateController;
   var photoController;
-  Offset photoPosition;
-  double photoScale;
-  double photoRotation;
-  Offset photoRotationFocusPoint;
+  PhotoViewControllerValue photoSetting;
 
   String _error = 'No error detected';
 
@@ -43,12 +38,9 @@ class _AddPlatePageState extends State<AddPlatePage> {
 
   void listener(PhotoViewControllerValue value) {
     setState(() {
-      photoPosition = value.position;
-      photoRotation = value.rotation;
-      photoRotationFocusPoint = value.rotationFocusPoint;
-      photoScale = value.scale;
-      print(
-          'DEBUG : photo is changed : position: $photoPosition / rotation: $photoRotation / rotationfocuspoint: $photoRotationFocusPoint / scale: $photoScale ');
+      photoSetting = value;
+      logger.d(
+          'DEBUG : photo is changed : position: ${photoSetting.position} / rotation: ${photoSetting.rotation} / rotationfocuspoint: ${photoSetting.rotationFocusPoint} / scale: ${photoSetting.scale} ');
     });
   }
 
@@ -61,21 +53,20 @@ class _AddPlatePageState extends State<AddPlatePage> {
     if (result.isAuth) {
       List<AssetPathEntity> list =
           await PhotoManager.getAssetPathList(type: RequestType.image);
-      print("DEBUG : $list");
+      logger.d("$list");
       for (int i = 0; i < list.length; i++) {
         var assetEntity = list[i];
         var assets = await assetEntity.assetList;
         var imageList = [];
         for (int j = 0; j < assets.length; j++) {
           var path = await assets[j].file;
-          print("DEBUG : $path");
           imageList.add(path);
         }
         files.add(FileModel(imageList, assetEntity.name));
       }
     } else {
       _error = "No permission there.";
-      print(_error);
+      logger.e(_error);
     }
 
     if (files != null && files.length > 0)
@@ -125,7 +116,8 @@ class _AddPlatePageState extends State<AddPlatePage> {
               Plate newPlate = Plate(
                   imgPaths: [image.path],
                   foodImage: Utility.base64String(image.readAsBytesSync()),
-                  whereToEat: "Yuni's home",
+                  foodSetting: photoSetting,
+                  whereToEat: "Need to Fill",
                   whenToEat: DateTime.now(),
                   description: "",
                   tag_ids: [],
@@ -157,13 +149,18 @@ class _AddPlatePageState extends State<AddPlatePage> {
                                 ClipOval(
                                   child: PhotoView(
                                     imageProvider: FileImage(image),
+                                    loadingBuilder: (context, progress) =>
+                                        Center(
+                                      child: CircularProgressIndicator(
+                                          color: Colors.pink.shade50),
+                                    ),
                                     enableRotation: true,
                                     minScale:
                                         PhotoViewComputedScale.contained * 0.8,
                                     maxScale:
                                         PhotoViewComputedScale.covered * 2,
-//                                    initialScale:
-//                                        PhotoViewComputedScale.covered,
+                                    initialScale:
+                                        PhotoViewComputedScale.covered,
                                     basePosition: Alignment.center,
                                     controller: photoController,
                                     scaleStateController: scaleStateController,
@@ -191,9 +188,9 @@ class _AddPlatePageState extends State<AddPlatePage> {
                   ),
                   Container(
                     alignment: Alignment.bottomRight,
-                    child: FlatButton(
+                    child: IconButton(
                         onPressed: goResizeBack,
-                        child: Icon(
+                        icon: Icon(
                           Icons.settings_backup_restore,
                           color: Colors.pink.shade50,
                         )),
@@ -268,8 +265,7 @@ class _AddPlatePageState extends State<AddPlatePage> {
                   ))
               .toList() ??
           [];
-    print("ERROR : There is no files");
+    logger.e("ERROR : There is no files");
     return [];
   }
-
 }

@@ -4,8 +4,7 @@ import 'package:happypigs_app/db/PlateType.dart';
 import 'package:happypigs_app/db/Tag.dart';
 import 'package:happypigs_app/db/User.dart';
 import 'package:happypigs_app/db/db_manager.dart';
-
-import 'db/db_manager.dart';
+import 'package:happypigs_app/util.dart';
 
 class HappyMainPage extends StatefulWidget {
   @override
@@ -19,24 +18,24 @@ class _HappyMainPageState extends State<HappyMainPage> {
   void initState() {
     super.initState();
     db_helper = DBHelper();
+//    test();
   }
 
   Future<void> test() async {
-    print("------ Test to insert ----- ");
+    logger.d("------ Test to insert ----- ");
     await create_samples_for_test();
-    print("------ Read User -------");
-    print(await db_helper.readUser());
-    print("------ Read Tag -------");
-    print(await db_helper.readTags());
-    print("------ Read PlateType -------");
-    print(await db_helper.readPlateTypes());
-    print("------ Read Plate -------");
-    print(await db_helper.readPlates());
+    logger.d("------ Read User -------");
+    logger.d(await db_helper.readUser());
+    logger.d("------ Read Tag -------");
+    logger.d(await db_helper.readTags());
+    logger.d("------ Read PlateType -------");
+    logger.d(await db_helper.readPlateTypes());
+    logger.d("------ Read Plate -------");
+    logger.d(await db_helper.readPlates());
   }
 
   @override
   Widget build(BuildContext context) {
-    test();
     return Scaffold(
       appBar: AppBar(
         title: Text('Happy Pig Main Page'),
@@ -59,7 +58,7 @@ class _HappyMainPageState extends State<HappyMainPage> {
         tag_ids: [0, 1],
         rating: 3,
         plateTypeId: 0);
-    print("Try to insert $plate_ex1");
+    logger.d("Try to insert $plate_ex1");
     await db_helper.insertPlate(plate_ex1);
 
     var plate_ex2 = Plate(
@@ -70,7 +69,7 @@ class _HappyMainPageState extends State<HappyMainPage> {
         tag_ids: [2],
         rating: 2,
         plateTypeId: 0);
-    print("Try to insert $plate_ex2");
+    logger.d("Try to insert $plate_ex2");
     await db_helper.insertPlate(plate_ex2);
 
     var plate_ex3 = Plate(
@@ -81,18 +80,18 @@ class _HappyMainPageState extends State<HappyMainPage> {
         tag_ids: [],
         rating: 1,
         plateTypeId: 0);
-    print("Try to insert $plate_ex3");
+    logger.d("Try to insert $plate_ex3");
     await db_helper.insertPlate(plate_ex3);
 
     var platetype_ex1 = PlateType(imgPath: "", plateGroupId: 0);
-    print(platetype_ex1);
+    logger.d(platetype_ex1);
     await db_helper.insertPlateType(platetype_ex1);
 
     var tag_ex1 = Tag(name: "Italian");
-    print(tag_ex1);
+    logger.d(tag_ex1);
     await db_helper.insertTag(tag_ex1);
 
     await db_helper.insertUser(User(name: 'piggy'));
-    print("Succeed to insert----------");
+    logger.d("Succeed to insert----------");
   }
 }

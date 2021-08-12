@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:smooth_star_rating/smooth_star_rating.dart';
 import 'package:happypigs_app/util.dart';
+import 'package:happypigs_app/db/db_manager.dart';
+
 import 'package:happypigs_app/db/Plate.dart';
 
 class AddScorePage extends StatefulWidget {
@@ -9,11 +13,24 @@ class AddScorePage extends StatefulWidget {
 }
 
 class _AddScorePageState extends State<AddScorePage> {
+  DBHelper db_helper;
+
+  @override
+  void initState() {
+    super.initState();
+    db_helper = DBHelper();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     var contextSize = MediaQuery.of(context).size;
     final newPlate = ModalRoute.of(context).settings.arguments as Plate;
-    print(newPlate);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -28,7 +45,11 @@ class _AddScorePageState extends State<AddScorePage> {
             icon: const Icon(Icons.check),
             color: Colors.black,
             onPressed: () async {
-              Navigator.of(context).pushNamed('/');
+              await db_helper.insertPlate(newPlate);
+              logger.d("------ Read Plate -------");
+              await db_helper.readPlates();
+
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
             },
           ),
         ],
@@ -48,10 +69,11 @@ class _AddScorePageState extends State<AddScorePage> {
                     allowHalfRating: false,
                     onRated: (v) {
                       newPlate.rating = v.toInt();
-                      print(v);
+                      logger.d(v);
                     },
                     starCount: 3,
-                    rating: (newPlate.rating<0? 0: newPlate.rating).toDouble(),
+                    rating:
+                        (newPlate.rating < 0 ? 0 : newPlate.rating).toDouble(),
                     size: 40.0,
                     isReadOnly: false,
                     color: Colors.pink,
@@ -64,9 +86,33 @@ class _AddScorePageState extends State<AddScorePage> {
             ),
             Container(
               height: contextSize.height * 0.4,
-              width: contextSize.height * 0.4,
-              child: ClipOval(
-                child: Utility.imageFromBase64String(newPlate.foodImage),
+              alignment: Alignment.center,
+              child: Stack(
+                children: <Widget>[
+                  Align(
+                    alignment: Alignment.center,
+                    child: newPlate.foodImage != null
+                        ? Container(
+                            height: contextSize.height * 0.4,
+                            width: contextSize.height * 0.4,
+                            alignment: Alignment.center,
+                            decoration: new BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.pink.shade50,
+                                  width: 10,
+                                ),
+                                image: DecorationImage(
+                                  fit: BoxFit.cover,
+                                  image: Utility.imageFromBase64String(
+                                      newPlate.foodImage),
+                                )),
+                          )
+                        : Container(
+                            color: Colors.pink.shade50,
+                          ),
+                  ),
+                ],
               ),
             ),
           ],
