@@ -8,6 +8,7 @@ import 'Plate.dart';
 import 'PlateType.dart';
 import 'Tag.dart';
 import 'User.dart';
+import 'package:happypigs_app/util.dart';
 
 class DBHelper {
   static final DBHelper _instance = DBHelper.internal();
@@ -59,7 +60,7 @@ class DBHelper {
          WHERE type = 'table' 
          AND name != 'android_metadata' 
          AND name != 'sqlite_sequence';""");
-    print("count :  ${res[0]['count']}");
+    logger.d("count :  ${res[0]['count']}");
     return res[0]['count'];
   }
 
@@ -170,7 +171,7 @@ class DBHelper {
         "SELECT * FROM $plateTable WHERE plateId=(SELECT max(plateId) FROM $plateTable)");
     var dbItem = resultSet.first;
     plate.plateId = dbItem['plateId'] as int;
-    print("Put id to plate ${plate.plateId}");
+    logger.d("Put id to plate ${plate.plateId}");
 
     for (var imgPath in plate.imgPaths) {
       await dbClient.insert(
@@ -201,7 +202,7 @@ class DBHelper {
         "SELECT * FROM $plateTypeTable WHERE plateTypeId=(SELECT max(plateTypeId) FROM $plateTypeTable)");
     var dbItem = resultSet.first;
     plate_type.plateTypeId = dbItem['plateTypeId'] as int;
-    print("Put id to plate_type ${plate_type.plateTypeId}");
+    logger.d("Put id to plate_type ${plate_type.plateTypeId}");
   }
 
   Future<void> insertTag(Tag tag) async {
@@ -215,7 +216,7 @@ class DBHelper {
         "SELECT * FROM $tagsTable WHERE tagId=(SELECT max(tagId) FROM $tagsTable)");
     var dbItem = resultSet.first;
     tag.tagId = dbItem['tagId'] as int;
-    print("Put id to tag ${tag.tagId}");
+    logger.d("Put id to tag ${tag.tagId}");
   }
 
   Future<List<Map<String, dynamic>>> getData(String table_name) async {
@@ -237,21 +238,22 @@ class DBHelper {
     for (var pl in maps) {
       var imgPaths = await getPlateData(pl['plateId'], rPlateImgTable);
       var plateTags = await getPlateData(pl['plateId'], rItemTagTable);
+      var plate = Plate(
+          plateId: pl['plateId'],
+          whereToEat: pl['whereToEat'],
+          whenToEat: DateTime.parse(pl['whenToEat']),
+          description: pl['description'],
+          plateTypeId: pl['plateTypeId'],
+          rating: pl['rating'],
+          imgPaths: List.generate(imgPaths.length, (j) {
+            return imgPaths[j]['path'];
+          }),
+          tag_ids: List.generate(plateTags.length, (k) {
+            return plateTags[k]['tagId'];
+          }));
 
-      plates.add(Plate(
-        plateId: pl['plateId'],
-        whereToEat: pl['whereToEat'],
-        whenToEat: DateTime.parse(pl['whenToEat']),
-        description: pl['description'],
-        plateTypeId: pl['plateTypeId'],
-        rating: pl['rating'],
-        imgPaths: List.generate(imgPaths.length, (j) {
-          return imgPaths[j]['path'];
-        }),
-        tag_ids: List.generate(plateTags.length, (k) {
-          return plateTags[k]['tagId'];
-        }),
-      ));
+      logger.d(plate);
+      plates.add(plate);
     }
     ;
     return plates;

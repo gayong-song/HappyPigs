@@ -26,6 +26,12 @@ dependencies:
   sqflite:
   path:
   path_provider:
+  carousel_slider:
+  photo_manager:
+  photo_view:
+  logger:
+  smooth_star_rating:
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2

@@ -1,16 +1,22 @@
+import 'package:photo_view/photo_view.dart';
+
 class Plate {
   int plateId;
   List<String> imgPaths = [];
+  String foodImage;
+  PhotoViewControllerValue foodSetting;
   final String whereToEat;
   final DateTime whenToEat;
   final String description;
   List<int> tag_ids = [];
-  final int rating;
+  int rating;
   final int plateTypeId;
 
   Plate(
       {this.plateId,
       this.imgPaths,
+      this.foodImage,
+      this.foodSetting,
       this.whereToEat,
       this.whenToEat,
       this.description,
