@@ -6,6 +6,8 @@ import 'package:photo_view/photo_view.dart';
 import 'package:happypigs_app/file.dart';
 import 'package:happypigs_app/util.dart';
 import 'package:happypigs_app/db/Plate.dart';
+import 'package:exif/exif.dart';
+import 'package:intl/intl.dart';
 
 class AddPlatePage extends StatefulWidget {
   @override
@@ -19,6 +21,8 @@ class _AddPlatePageState extends State<AddPlatePage> {
   PhotoViewScaleStateController scaleStateController;
   var photoController;
   PhotoViewControllerValue photoSetting;
+  var dateTime = DateTime.now();
+  Map<String, dynamic> location = {};
 
   String _error = 'No error detected';
 
@@ -113,15 +117,17 @@ class _AddPlatePageState extends State<AddPlatePage> {
             icon: const Icon(Icons.navigate_next),
             color: Colors.pink.shade50,
             onPressed: () async {
+              await _getDatafromImage();
               Plate newPlate = Plate(
                   imgPaths: [image.path],
                   foodImage: Utility.base64String(image.readAsBytesSync()),
                   foodSetting: photoSetting,
-                  whereToEat: "Need to Fill",
-                  whenToEat: DateTime.now(),
+                  whereToEat:
+                      location == {} ? "Need to fill" : location.toString(),
+                  whenToEat: dateTime,
                   description: "",
                   tag_ids: [],
-                  rating: -1,
+                  rating: 1,
                   plateTypeId: 0);
               Navigator.of(context).pushNamed('/addScore', arguments: newPlate);
             },
@@ -267,5 +273,48 @@ class _AddPlatePageState extends State<AddPlatePage> {
           [];
     logger.e("ERROR : There is no files");
     return [];
+  }
+
+  void _getDatafromImage() async {
+    Map<String, IfdTag> imgTags =
+        await readExifFromBytes(File(image.path).readAsBytesSync());
+    print(imgTags);
+
+    if (imgTags.containsKey('Image DateTime')) {
+      dateTime = DateFormat("yyyy:MM:dd HH:mm:ss").parse(imgTags['Image DateTime'].toString());
+    }
+
+    if (imgTags.containsKey('GPS GPSLongitude')) {
+      get_exifGPS(imgTags);
+    }
+  }
+
+  void get_exifGPS(Map<String, IfdTag> tags) {
+    final latitudeValue = tags['GPS GPSLatitude']
+        .values
+        .map<double>(
+            (item) => (item.numerator.toDouble() / item.denominator.toDouble()))
+        .toList();
+    final latitudeSignal = tags['GPS GPSLatitudeRef'].printable;
+
+    final longitudeValue = tags['GPS GPSLongitude']
+        .values
+        .map<double>(
+            (item) => (item.numerator.toDouble() / item.denominator.toDouble()))
+        .toList();
+    final longitudeSignal = tags['GPS GPSLongitudeRef'].printable;
+
+    double latitude =
+        latitudeValue[0] + (latitudeValue[1] / 60) + (latitudeValue[2] / 3600);
+
+    double longitude = longitudeValue[0] +
+        (longitudeValue[1] / 60) +
+        (longitudeValue[2] / 3600);
+
+    if (latitudeSignal == 'S') latitude = -latitude;
+    if (longitudeSignal == 'W') longitude = -longitude;
+
+    location['latitude'] = latitude;
+    location['longitude'] = longitude;
   }
 }
