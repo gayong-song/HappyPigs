@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:happypigs_app/addPlatePage.dart';
 import 'package:happypigs_app/addScorePage.dart';
 import 'package:happypigs_app/db/db_manager.dart';
-import 'package:happypigs_app/welcome.dart';
+import 'package:happypigs_app/welcomePage.dart';
 
+<<<<<<< HEAD:happypigs_app/lib/main.dart
 import 'addPlatePage.dart';
+=======
+>>>>>>> main:happypigs_app/lib/mainPage.dart
 import 'happy_main.dart';
 
 Future<void> main() async {
@@ -20,9 +24,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: '/',
+      initialRoute: '/welcome',
       routes: {
-        '/': (context) => HappyMainPage(),
+        '/mainPage': (context) => HappyMainPage(),
         '/welcome' : (context) => WelcomePage(),
         '/addPlate' : (context) => AddPlatePage(),
         '/addScore' : (context) => AddScorePage(),
