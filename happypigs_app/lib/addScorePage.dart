@@ -47,7 +47,7 @@ class _AddScorePageState extends State<AddScorePage> {
               logger.d("------ Read Plate -------");
               await db_helper.readPlates();
 
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              Navigator.pushNamedAndRemoveUntil(context, '/mainPage', (route) => false);
             },
           ),
         ],
