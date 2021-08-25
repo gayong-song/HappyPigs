@@ -28,11 +28,11 @@ dependencies:
   path_provider:
   carousel_slider:
   photo_manager:
-  photo_view:
   logger:
   smooth_star_rating:
   exif:
   intl:
+  crop: any
   fl_paging:
 
   # The following adds the Cupertino Icons font to your application.

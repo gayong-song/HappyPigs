@@ -111,6 +111,7 @@ class DBHelper {
   Future<void> _createPlateTable(Database db) async {
     await db.execute('''create table IF NOT EXISTS $plateTable (
           plateId integer primary key autoincrement not null,
+          foodImage text not null,
           whereToEat text not null,
           whenToEat datetime not null,
           description text not null,
@@ -240,6 +241,7 @@ class DBHelper {
       var plateTags = await getPlateData(pl['plateId'], rItemTagTable);
       var plate = Plate(
           plateId: pl['plateId'],
+          foodImage: pl['foodImage'],
           whereToEat: pl['whereToEat'],
           whenToEat: DateTime.parse(pl['whenToEat']),
           description: pl['description'],
