@@ -1,13 +1,13 @@
 import 'dart:io';
-
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:photo_view/photo_view.dart';
 import 'package:happypigs_app/file.dart';
 import 'package:happypigs_app/util.dart';
 import 'package:happypigs_app/db/Plate.dart';
 import 'package:exif/exif.dart';
 import 'package:intl/intl.dart';
+import 'package:crop/crop.dart';
 
 class AddPlatePage extends StatefulWidget {
   @override
@@ -18,38 +18,31 @@ class _AddPlatePageState extends State<AddPlatePage> {
   List<FileModel> files = [];
   FileModel selectedModel = FileModel([], "");
   File image;
-  PhotoViewScaleStateController scaleStateController;
-  var photoController;
-  PhotoViewControllerValue photoSetting;
   var dateTime = DateTime.now();
   Map<String, dynamic> location = {};
+  final cropController = CropController(scale: 1.0);
+  double _rotation = 0;
 
   String _error = 'No error detected';
 
   @override
   void initState() {
     super.initState();
-    scaleStateController = PhotoViewScaleStateController();
-    photoController = PhotoViewController()..outputStateStream.listen(listener);
     getImagesPath();
   }
 
   @override
   void dispose() {
-    scaleStateController.dispose();
     super.dispose();
   }
 
-  void listener(PhotoViewControllerValue value) {
-    setState(() {
-      photoSetting = value;
-      logger.d(
-          'DEBUG : photo is changed : position: ${photoSetting.position} / rotation: ${photoSetting.rotation} / rotationfocuspoint: ${photoSetting.rotationFocusPoint} / scale: ${photoSetting.scale} ');
-    });
-  }
-
   void goResizeBack() {
-    scaleStateController.scaleState = PhotoViewScaleState.covering;
+    cropController.rotation = 0;
+    cropController.scale = 1.2;
+    cropController.offset = Offset.zero;
+    setState(() {
+      _rotation = 0;
+    });
   }
 
   void getImagesPath() async {
@@ -118,10 +111,15 @@ class _AddPlatePageState extends State<AddPlatePage> {
             color: Colors.pink.shade50,
             onPressed: () async {
               await _getDatafromImage();
+              final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+              final cropped = await cropController.crop(pixelRatio: pixelRatio);
+              var byteData =
+                  await cropped.toByteData(format: ui.ImageByteFormat.png);
+
               Plate newPlate = Plate(
                   imgPaths: [image.path],
-                  foodImage: Utility.base64String(image.readAsBytesSync()),
-                  foodSetting: photoSetting,
+                  foodImage:
+                      Utility.base64String(byteData.buffer.asUint8List()),
                   whereToEat:
                       location == {} ? "Need to fill" : location.toString(),
                   whenToEat: dateTime,
@@ -153,25 +151,24 @@ class _AddPlatePageState extends State<AddPlatePage> {
                             child: Stack(
                               children: <Widget>[
                                 ClipOval(
-                                  child: PhotoView(
-                                    imageProvider: FileImage(image),
-                                    loadingBuilder: (context, progress) =>
-                                        Center(
-                                      child: CircularProgressIndicator(
-                                          color: Colors.pink.shade50),
-                                    ),
-                                    enableRotation: true,
-                                    minScale:
-                                        PhotoViewComputedScale.contained * 0.8,
-                                    maxScale:
-                                        PhotoViewComputedScale.covered * 2,
-                                    initialScale:
-                                        PhotoViewComputedScale.covered,
-                                    basePosition: Alignment.center,
-                                    controller: photoController,
-                                    scaleStateController: scaleStateController,
-                                    backgroundDecoration:
-                                        BoxDecoration(color: Colors.white),
+                                  child: Crop(
+                                    backgroundColor: Colors.transparent,
+                                    dimColor: Colors.transparent,
+                                    onChanged: (decomposition) {
+                                      if (_rotation != decomposition.rotation) {
+                                        setState(() {
+                                          _rotation =
+                                              ((decomposition.rotation + 180) %
+                                                      360) -
+                                                  180;
+                                        });
+                                      }
+                                      logger.d(
+                                          "Scale : ${decomposition.scale}, Rotation: ${decomposition.rotation}, translation: ${decomposition.translation}");
+                                    },
+                                    controller: cropController,
+                                    shape: BoxShape.rectangle,
+                                    child: Image.file(image),
                                   ),
                                 ),
                               ],
@@ -278,10 +275,11 @@ class _AddPlatePageState extends State<AddPlatePage> {
   void _getDatafromImage() async {
     Map<String, IfdTag> imgTags =
         await readExifFromBytes(File(image.path).readAsBytesSync());
-    print(imgTags);
+    logger.d(imgTags);
 
     if (imgTags.containsKey('Image DateTime')) {
-      dateTime = DateFormat("yyyy:MM:dd HH:mm:ss").parse(imgTags['Image DateTime'].toString());
+      dateTime = DateFormat("yyyy:MM:dd HH:mm:ss")
+          .parse(imgTags['Image DateTime'].toString());
     }
 
     if (imgTags.containsKey('GPS GPSLongitude')) {
