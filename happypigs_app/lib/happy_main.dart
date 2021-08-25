@@ -4,6 +4,7 @@ import 'package:happypigs_app/db/PlateType.dart';
 import 'package:happypigs_app/db/Tag.dart';
 import 'package:happypigs_app/db/User.dart';
 import 'package:happypigs_app/db/db_manager.dart';
+import 'package:happypigs_app/note_pages/grid_view_page.dart';
 import 'package:happypigs_app/util.dart';
 
 class HappyMainPage extends StatefulWidget {
@@ -38,8 +39,50 @@ class _HappyMainPageState extends State<HappyMainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Happy Pig Main Page'),
+        toolbarHeight: MediaQuery.of(context).size.height * 0.1,
+        title: Align(
+          alignment: Alignment.center,
+          child: Stack(
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: FloatingActionButton(
+                  mini: true,
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/setting');
+                  },
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  child: Icon(Icons.settings),
+                ),
+              ),
+              Column(
+                children: [
+                  Text('Piggy!',
+                      style: TextStyle(
+                        fontFamily: 'Oi',
+                        // fontWeight: FontWeight.w800,
+                        color: Colors.pink,
+                        fontSize: 34.0,
+                      )),
+                  Text('What did you eat?',
+                      style: TextStyle(
+                        fontFamily: 'Oi',
+                        // fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        fontSize: 28.0,
+                      )),
+                ],
+              ),
+            ],
+          ),
+        ),
+        backgroundColor: Colors.grey,
       ),
+      body: Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: GridViewPage()),
+      // floatingActionButtonLocation: FloatingActionButtonLocation,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.of(context).pushNamed('/addPlate');
